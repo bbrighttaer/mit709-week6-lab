@@ -1,0 +1,47 @@
+name: Pipeline
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: CI-02 checkout
+        uses: actions/checkout@v7
+
+      - name: CI-02 setup python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: CI-02 install dependencies
+        run: pip install -r requirements.txt
+
+      - name: CI-03 tests
+        run: pytest test_booking_rules.py test_booking_store.py --cov=booking_rules --cov=booking_store --cov-branch --cov-report=term-missing --cov-fail-under=90
+
+      - name: CI-04 mutation testing
+        run: python mutants.py test_booking_rules.py --min-score 90
+
+  deliver:
+    needs: checks
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: CI-05 checkout
+        uses: actions/checkout@v7
+
+      - name: CI-05 upload release artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: studyspace-release
+          path: |
+            booking_rules.py
+            booking_store.py
