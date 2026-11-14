@@ -1,0 +1,51 @@
+# Teaching sample for MIT709 Week 6. Serves as the  AI output for
+# pipeline-spec.md Part 1 (CI-01 to CI-06); not produced by a named model.
+# It is valid YAML and it runs, but it does not meet the spec and it is unsafe.
+
+name: StudySpace CI/CD Pipeline
+
+on:
+  push:
+  pull_request_target:
+    branches: [main]
+
+permissions: write-all
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Show build info
+        run: echo "Building commit ${{ github.event.head_commit.message }}"
+
+      - name: Run tests with coverage
+        run: pytest --cov=. --cov-report=term-missing
+        continue-on-error: true
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Upload release
+        uses: actions/upload-artifact@v4
+        with:
+          name: studyspace-release
+          path: .
