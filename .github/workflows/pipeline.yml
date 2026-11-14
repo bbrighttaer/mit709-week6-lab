@@ -28,6 +28,16 @@ jobs:
 
       - name: CI-04 mutation testing
         run: python mutants.py test_booking_rules.py --min-score 90
+      
+      - name: CI-07 lint (Ruff)
+        run: ruff check .
+      
+      - name: CI-08 code security (Bandit)
+        run: bandit booking_rules.py booking_store.py
+      
+      - name: CI-09 dependency audit (pip-audit)
+        run: pip-audit -r requirements.txt
+
 
   deliver:
     needs: checks
